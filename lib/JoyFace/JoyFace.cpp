@@ -1,5 +1,6 @@
-#include <M5Stack.h>
 #include <Wire.h>
+#include <Preferences.h>
+#include <M5Stack.h>
 #include "JoyFace.h"
 
 #define FACE_JOY_ADDR   0x5e
@@ -11,9 +12,9 @@
 //
 void JoyFace::begin(bool show_leds) {
   this->show_leds = show_leds;
-  Wire.begin();
-  go_dark();    // unconditionally turn leds off
-  // TODO: load calibration data from NVS
+  Wire.begin();                 // Ensure this is started
+  go_dark();                    // unconditionally turn leds off
+  load_calibration_from_nvs();  // calibrate if we have the data
 }
 
 
@@ -132,13 +133,15 @@ bool JoyFace::calibrate() {
 
     // When the joystick is at rest in the center, add to the center sums
     if(raw_x > 400 && raw_x < 600 && raw_y > 400 && raw_y < 600) {
-      cal_info.x_center += raw_x;
-      cal_info.y_center += raw_y;
-      Serial.printf("Calibration center point #%d: raw_x = %d, raw_y = %d, x_center = %d, y_center = %d\n",
-                    cal_info.center_count, raw_x, raw_y, cal_info.x_center, cal_info.y_center);
-      cal_info.center_count++;
+      if(CALIBRATION_SAMPLES > cal_info.center_count) {
+        cal_info.x_center += raw_x;
+        cal_info.y_center += raw_y;
+        Serial.printf("Calibration center point #%d: raw_x = %d, raw_y = %d, x_center = %d, y_center = %d\n",
+                      cal_info.center_count, raw_x, raw_y, cal_info.x_center, cal_info.y_center);
+        cal_info.center_count++;
+      }
     }
-    else {
+    else if(CALIBRATION_SAMPLES > cal_info.xy_count) {
       // Capture minimum and maximum values when user is making circles
       if(raw_x > cal_info.max_x) cal_info.max_x = raw_x;
       if(raw_x < cal_info.min_x) cal_info.min_x = raw_x;
@@ -150,7 +153,7 @@ bool JoyFace::calibrate() {
     }
 
     // If we've collected all the data we need, calibration is complete
-    if(CALIBRATION_SAMPLES <= cal_info.center_count && CALIBRATION_SAMPLES < cal_info.xy_count) {
+    if(CALIBRATION_SAMPLES-1 <= cal_info.center_count && CALIBRATION_SAMPLES-1 <= cal_info.xy_count) {
       // Handle the actual calibration here
       cal_data.center_x = cal_info.x_center / cal_info.center_count;
       cal_data.center_y = cal_info.y_center / cal_info.center_count;
@@ -164,5 +167,59 @@ bool JoyFace::calibrate() {
     }
     return calibrated;
   }
+  return false;
+}
+
+
+bool JoyFace::load_calibration_from_nvs() {
+  Preferences prefs;
+  JF_CalDat   temp;
+  if(prefs.begin(JF_NAMESPACE, true)) { // read-only
+    temp.center_x = prefs.getUShort("center_x", 0xFFFF);  // Defaults are impossible values
+    temp.center_y = prefs.getUShort("center_y", 0xFFFF);
+    temp.x_scale  = prefs.getDouble("x_scale",  10.0);
+    temp.y_scale  = prefs.getDouble("y_scale",  10.0);
+    prefs.end();
+    if(0xFFFF  == temp.center_x || 0xFFFF == temp.center_y || 10.0 == temp.x_scale || 10.0 == temp.y_scale) {
+      Serial.println("ERROR: failed to read calibration data");
+      return false;
+    }
+    cal_data    = temp;    // assign entire structure
+    calibrated  = true;
+    Serial.printf("Succeeded reading calibration data from NVS: %d/%d, %.4f/%.5f\n",
+              cal_data.center_x, cal_data.center_y, cal_data.x_scale, cal_data.y_scale);
+    return true;
+  }
+  Serial.println("ERROR: prefs.begin(true) failed in load_calibration_from_nvs().");
+  return false;
+}
+
+
+bool JoyFace::save_calibration_to_nvs() {
+  Preferences prefs;
+  if(prefs.begin(JF_NAMESPACE, false)) { // read-write
+    prefs.putUShort("center_x", cal_data.center_x);  // Defaults are impossible values
+    prefs.putUShort("center_y", cal_data.center_y);
+    prefs.putDouble("x_scale", cal_data.x_scale);
+    prefs.putDouble("y_scale", cal_data.y_scale);
+    prefs.end();
+    Serial.printf("Succeeded writing calibration data to NVS: %d/%d, %.4f/%.5f\n",
+            cal_data.center_x, cal_data.center_y, cal_data.x_scale, cal_data.y_scale);
+    return true;
+  }
+  Serial.println("ERROR: prefs.begin(false) failed in save_calibration_to_nvs().");
+  return false;
+}
+
+
+bool JoyFace::delete_calibration_from_nvs() {
+  Preferences prefs;
+  if(prefs.begin(JF_NAMESPACE, false)) { // read-write
+    prefs.clear();
+    prefs.end();
+    Serial.println("JoyFace NVS settings cleared");
+    return true;
+  }
+  Serial.println("ERROR: prefs.begin(false) failed in delete_calibration_from_nvs().");
   return false;
 }

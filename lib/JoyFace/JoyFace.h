@@ -1,7 +1,23 @@
 #pragma once
 #include <stdint.h>
 
-// A dirver interface for the Joystick Face Module for M5Stack
+// A driver interface for the Joystick Face Module for M5Stack
+// By Van Kichline
+// In the year of the plague
+//
+// Normally, X and Y return values between ~ 200 and 800, and center values may differ by 50, making the readings hard to use.
+// Calibration stores data in NVS memory used to convert this raw input to -100 to +100 for X and Y, with the center at 0/0.
+// How to calibrate:
+// Calling calibrate the first time switches to calibration mode.
+// The calibration code will take CALIBRATION_SAMPLES of the center position (when joystick is near center)
+// and CALIBRATION_SAMPLES outside the center area to determine minimum and maximum X and Y.
+// Continue to rapidly call calibrate() until it returns true, indicating it's finished.
+// Begin by calibrating the center position: place the M5 on a flat surface, make sure the joystick is centered,
+// then begin calibation. Tap the device a couple times to jiggle the center position a tiny bit.
+// Next, gently move the joystick in circles to allow calibration to determine the minimums and maximums for X and Y.
+// While calibrating, is_calibrating() returns true. After calibrating, is_calibrated() returns true.
+// JoyFace attempts to load NVS data in begin(). If valid data is found, is_calibrated() will immediately return true.
+
 
 #define CALIBRATION_SAMPLES 50    // How many samples required for min/max and center calibation (must be less than 255)
 
@@ -47,6 +63,9 @@ class JoyFace {
     bool      is_calibrating()        { return calibrating; }
     bool      is_calibrated()         { return calibrated;  }
     JF_CalIn  &get_calibration_info() { return cal_info;    }
+    bool      save_calibration_to_nvs();
+    bool      load_calibration_from_nvs();
+    bool      delete_calibration_from_nvs();
   private:
     void      set_led(int index, int r, int g, int b);
     void      flash_leds();

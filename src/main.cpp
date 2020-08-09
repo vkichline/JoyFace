@@ -1,6 +1,20 @@
 #include <M5Stack.h>
 #include <JoyFace.h>
 
+// JoyFace Calibrator; and application for setting reasonable calibration settings
+// for the M5Stack JoyStick FACE module.
+// By Van Kichline, in the year of the plague.
+//
+// There are two parts to calibration: discovering the center point, and discovering the minimax of X and Y.
+// Begin by calibrating the center position: place the M5 on a flat surface, make sure the joystick is centered,
+// then press the A button. Tap the device a couple times to jiggle the center position a tiny bit. The "+" reading
+// will turn green when the center is acquired.
+// Next, gently move the joystick in circles to allow calibration to determine the minimums and maximums for X and Y.
+// When X and Y turn green, Button A's name will change back from "Normal" to "Calibrate" and the text will turn white.
+// Try the settings out. Make sure it's relatively easy to get to 0/0 at rest, and that the extremes attain +/- 100.
+// If the calibration looks good to you, press button B in the JoyFace app to save it to NVS.
+
+
 JoyFace   joy;
 
 
@@ -59,8 +73,9 @@ void setup() {
   M5.Lcd.clear();
   M5.Lcd.setTextColor(WHITE, BLACK);
   M5.Lcd.drawCentreString("JoyFace Calibrator", 160, 12, 4);
-  M5.Lcd.drawCentreString("Calibrate",     62, 220, 2);
-  M5.Lcd.drawCentreString("Save",         160, 220, 2);
+  M5.Lcd.drawCentreString("Calibrate",           62, 220, 2);
+  M5.Lcd.drawCentreString("Save",               160, 220, 2);
+  M5.Lcd.drawCentreString("Clear",              256, 220, 2);
 }
 
 
@@ -69,16 +84,23 @@ void loop() {
 
   M5.update();
   if(M5.BtnA.wasReleased()) {
+    clear_calibration_display();
     if(joy.is_calibrating()) {
       joy.read(reading);  // This will change JoyFace into non-calibrating mode
       M5.Lcd.drawCentreString("Calibrate", 62, 220, 2);
     }
     else {
-      clear_calibration_display();
       joy.calibrate();  // This will change JoyFace into calibrating mode.
       M5.Lcd.drawCentreString("  Normal  ", 62, 220, 2);
     }
   }
+  if(M5.BtnB.wasReleased()) {
+    joy.save_calibration_to_nvs();
+  }
+  if(M5.BtnC.wasReleased()) {
+    joy.delete_calibration_from_nvs();
+  }
+
   if(joy.is_calibrating()) {
     if(joy.calibrate()) {
       // Calibration is complete, is_calibrating will be false
@@ -88,6 +110,7 @@ void loop() {
       M5.Lcd.drawCentreString("Calibrate", 62, 220, 2);
     }
     else {
+      // More calibration to do
       draw_calibration(joy.get_calibration_info());
     }
   }
