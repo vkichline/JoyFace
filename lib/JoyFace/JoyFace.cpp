@@ -2,7 +2,9 @@
 #include <Wire.h>
 #include "JoyFace.h"
 
-#define FACE_JOY_ADDR 0x5e
+#define FACE_JOY_ADDR   0x5e
+#define JF_NAMESPACE    "JF_CalDat"
+#define ZERO_THRESHOLD  3
 
 
 // Must be called before othe functions.
@@ -58,7 +60,7 @@ bool JoyFace::read(JF_Reading& reading) {
       if( 100 < reading.y) reading.y =  100;
       if(-100 > reading.y) reading.y = -100;
       // Make 0/0 easier to hit
-      if(abs(reading.x) <= 3 && abs(reading.y <= 3)) {
+      if(abs(reading.x) <= ZERO_THRESHOLD && abs(reading.y) <= ZERO_THRESHOLD) {
         reading.x = 0;
         reading.y = 0;
       }
