@@ -18,12 +18,31 @@ void draw_reading(JF_Reading& data) {
 }
 
 
+void draw_calibration(JF_CalDat& data) {
+  String str = String(data.min_x) + "/" + String(data.max_x);
+  M5.Lcd.drawString(str, 100,  65, 4);
+  str = String(data.min_y) + "/" + String(data.max_y);
+  M5.Lcd.drawString(str, 100, 115, 4);
+  str = String(data.x_center / data.center_count) + "/" + String(data.y_center / data.center_count);
+  M5.Lcd.drawString(str, 100, 165, 4);
+}
+
+
+void clear_calibration_display() {
+  String str = "                    ";
+  M5.Lcd.drawString(str, 100,  65, 4);
+  M5.Lcd.drawString(str, 100, 115, 4);
+  M5.Lcd.drawString(str, 100, 165, 4);
+}
+
+
 void setup() {
   M5.begin();
   joy.begin();
   M5.Lcd.clear();
   M5.Lcd.drawCentreString("JoyFace Test", 160, 12, 4);
-  M5.Lcd.drawCentreString("Calibrate", 60, 220, 2);
+  M5.Lcd.drawCentreString("Calibrate",     60, 220, 2);
+  M5.Lcd.drawCentreString("Save",         160, 220, 2);
 }
 
 
@@ -43,7 +62,12 @@ void loop() {
   }
   if(joy.is_calibrating()) {
     if(joy.calibrate()) {
+      // Calibration is complete, is_calibrating will be false
+      clear_calibration_display();
       M5.Lcd.drawCentreString("Calibrate", 60, 220, 2);
+    }
+    else {
+      draw_calibration(joy.get_calibration_data());
     }
   }
   else if(joy.read(reading)) {
