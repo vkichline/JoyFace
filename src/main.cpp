@@ -46,7 +46,7 @@ void setup() {
   M5.begin();
   joy.begin();
   M5.Lcd.clear();
-  M5.Lcd.drawCentreString("JoyFace Test", 160, 12, 4);
+  M5.Lcd.drawCentreString("JoyFace Calibration", 160, 12, 4);
   M5.Lcd.drawCentreString("Calibrate",     62, 220, 2);
   M5.Lcd.drawCentreString("Save",         160, 220, 2);
 }
