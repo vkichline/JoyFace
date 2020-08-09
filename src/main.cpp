@@ -6,13 +6,13 @@ JoyFace   joy;
 
 void draw_reading(JF_Reading& data) {
   String str;
-  M5.Lcd.drawRect(20,  50, 280, 150, WHITE);   // Outline
+  M5.Lcd.drawRect(20,  50, 280, 150, WHITE);  // Outline
   M5.Lcd.drawLine(80,  50,  80, 200, WHITE);  // Vertical sep
   M5.Lcd.drawLine(20,  95, 300,  95, WHITE);  // Crossbar 1
   M5.Lcd.drawLine(20, 150, 300, 150, WHITE);  // Crossbar 2
   M5.Lcd.drawChar('X', 42,  65, 4);
-  M5.Lcd.drawChar('Y', 43, 115, 4);
-  M5.Lcd.drawChar('B', 43, 165, 4);
+  M5.Lcd.drawChar('Y', 42, 115, 4);
+  M5.Lcd.drawChar('B', 42, 165, 4);
   str = String(data.x) + "          ";
   M5.Lcd.drawString(str, 100,  65, 4);
   str = String(data.y) + "          ";
@@ -21,9 +21,19 @@ void draw_reading(JF_Reading& data) {
 }
 
 
+// Draw numbers in red if more calibation data is needed, green if complete.
+//
 void draw_calibration(JF_CalIn& data) {
+  String str;
+  M5.Lcd.drawRect(20,  50, 280, 150, WHITE);  // Outline
+  M5.Lcd.drawLine(80,  50,  80, 200, WHITE);  // Vertical sep
+  M5.Lcd.drawLine(20,  95, 300,  95, WHITE);  // Crossbar 1
+  M5.Lcd.drawLine(20, 150, 300, 150, WHITE);  // Crossbar 2
+  M5.Lcd.drawChar('X', 42,  65, 4);
+  M5.Lcd.drawChar('Y', 42, 115, 4);
+  M5.Lcd.drawChar('+', 46, 165, 4);
   M5.Lcd.setTextColor(data.xy_count < CALIBRATION_SAMPLES ? RED : GREEN, BLACK);
-  String str = String(data.min_x) + "/" + String(data.max_x);
+  str = String(data.min_x) + "/" + String(data.max_x);
   M5.Lcd.drawString(str, 100,  65, 4);
   str = String(data.min_y) + "/" + String(data.max_y);
   M5.Lcd.drawString(str, 100, 115, 4);
@@ -35,10 +45,11 @@ void draw_calibration(JF_CalIn& data) {
 
 
 void clear_calibration_display() {
-  String str = "                    ";
-  M5.Lcd.drawString(str, 100,  65, 4);
-  M5.Lcd.drawString(str, 100, 115, 4);
-  M5.Lcd.drawString(str, 100, 165, 4);
+  M5.Lcd.fillRect(21,  51, 279, 149, BLACK);  // Erase
+  M5.Lcd.drawRect(20,  50, 280, 150, WHITE);  // Outline
+  M5.Lcd.drawLine(80,  50,  80, 200, WHITE);  // Vertical sep
+  M5.Lcd.drawLine(20,  95, 300,  95, WHITE);  // Crossbar 1
+  M5.Lcd.drawLine(20, 150, 300, 150, WHITE);  // Crossbar 2
 }
 
 
@@ -46,7 +57,8 @@ void setup() {
   M5.begin();
   joy.begin();
   M5.Lcd.clear();
-  M5.Lcd.drawCentreString("JoyFace Calibration", 160, 12, 4);
+  M5.Lcd.setTextColor(WHITE, BLACK);
+  M5.Lcd.drawCentreString("JoyFace Calibrator", 160, 12, 4);
   M5.Lcd.drawCentreString("Calibrate",     62, 220, 2);
   M5.Lcd.drawCentreString("Save",         160, 220, 2);
 }
@@ -62,6 +74,7 @@ void loop() {
       M5.Lcd.drawCentreString("Calibrate", 62, 220, 2);
     }
     else {
+      clear_calibration_display();
       joy.calibrate();  // This will change JoyFace into calibrating mode.
       M5.Lcd.drawCentreString("  Normal  ", 62, 220, 2);
     }
