@@ -42,7 +42,9 @@ void loop() {
     }
   }
   if(joy.is_calibrating()) {
-    joy.calibrate();
+    if(joy.calibrate()) {
+      M5.Lcd.drawCentreString("Calibrate", 60, 220, 2);
+    }
   }
   else if(joy.read(reading)) {
     draw_reading(reading);

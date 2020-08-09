@@ -79,9 +79,50 @@ void JoyFace::flash_leds() {
 }
 
 
-void JoyFace::calibrate() {
+bool JoyFace::calibrate() {
+  if(!calibrating) {
+    Serial.println("Beginning calibration");
+    if(data) delete data;
+    data = new JF_CalDat();
+    if(data) {
+      calibrating = true;
+      calibrated  = false;
+    }
+  }
   Wire.requestFrom(FACE_JOY_ADDR, 5);
   if (Wire.available()) {
-    calibrating = true;
+    // Acquire the joystick data
+    uint8_t y_low   = Wire.read();
+    uint8_t y_high  = Wire.read();
+    uint8_t x_low   = Wire.read();
+    uint8_t x_high  = Wire.read();
+                      Wire.read();  // burn the button
+    uint16_t raw_x  = x_high << 8 | x_low;
+    uint16_t raw_y  = y_high << 8 | y_low;
+    if(raw_x > data->max_x) data->max_x = raw_x;
+    if(raw_x < data->min_x) data->min_x = raw_x;
+    if(raw_y > data->max_y) data->max_y = raw_y;
+    if(raw_y < data->min_y) data->min_y = raw_y;
+    Serial.printf("Calibartion reading: raw_x = %d, raw_y = %d, min_x = %d, max_x = %d, min_y = %d, max_y = %d\n", raw_x, raw_y, data->min_x, data->max_x, data->min_y, data->max_y);
+    if(raw_x < CALIBRATION_OFFSET || raw_y < CALIBRATION_OFFSET) {
+      Serial.printf("ERROR: Calibration x offset insufficient: raw_x = %d, raw_y = %d\n", raw_x, raw_y);
+    }
+    else {
+      // only count those near the center
+      if(raw_x > 400 && raw_x < 600 && raw_y > 400 && raw_y < 600) {
+        data->x_pos[raw_x - CALIBRATION_OFFSET] = raw_x;
+        data->y_pos[raw_y - CALIBRATION_OFFSET] = raw_y;
+        Serial.printf("Calibration center point #%d: raw_x = %d, raw_y = %d\n", data->xy_count, raw_x, raw_y);
+        data->xy_count++;
+      }
+    }
+    // The xy_count will roll over to zero when full
+    if(CALIBRATION_POS_SAMPLES <= data->xy_count) {
+      // TODO: handle the actual calibration here
+      calibrating = false;
+      calibrated  = true;
+    }
+    return calibrated;
   }
+  return false;
 }
