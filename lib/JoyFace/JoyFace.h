@@ -12,7 +12,7 @@ typedef struct JF_Reading {
 } JF_Reading;
 
 
-typedef struct JF_Calibration_Data {
+typedef struct JF_Calibration_Info {
   void clear() {
     max_x = max_y = x_center = y_center = xy_count = center_count = 0;
     min_x = min_y = 0xFFFF;
@@ -27,6 +27,14 @@ typedef struct JF_Calibration_Data {
   uint8_t   xy_count      = 0;      // How many X/Y min/max positions have been acquired
   uint8_t   center_count  = 0;      // How many center positions have been acquired
   bool      complete      = false;  // True if 256 at rest positions have been acquired
+} JF_Calibration_Info, JF_CalIn;
+
+
+typedef struct JF_Calibration_Data {
+  uint16_t  center_x;
+  uint16_t  center_y;
+  double    x_scale;
+  double    y_scale;
 } JF_Calibration_Data, JF_CalDat;
 
 
@@ -38,12 +46,13 @@ class JoyFace {
     void      go_dark();
     bool      is_calibrating()        { return calibrating; }
     bool      is_calibrated()         { return calibrated;  }
-    JF_CalDat &get_calibration_data() { return cal_data;    }
+    JF_CalIn  &get_calibration_info() { return cal_info;    }
   private:
     void      set_led(int index, int r, int g, int b);
     void      flash_leds();
     bool      show_leds   = true;
     bool      calibrating = false;
     bool      calibrated  = false;
+    JF_CalIn  cal_info;
     JF_CalDat cal_data;
 };

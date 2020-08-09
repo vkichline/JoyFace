@@ -5,6 +5,7 @@ JoyFace   joy;
 
 
 void draw_reading(JF_Reading& data) {
+  String str;
   M5.Lcd.drawRect(20,  50, 280, 150, WHITE);   // Outline
   M5.Lcd.drawLine(80,  50,  80, 200, WHITE);  // Vertical sep
   M5.Lcd.drawLine(20,  95, 300,  95, WHITE);  // Crossbar 1
@@ -12,8 +13,10 @@ void draw_reading(JF_Reading& data) {
   M5.Lcd.drawChar('X', 42,  65, 4);
   M5.Lcd.drawChar('Y', 43, 115, 4);
   M5.Lcd.drawChar('B', 43, 165, 4);
-  M5.Lcd.drawNumber(data.x, 100,  65, 4);
-  M5.Lcd.drawNumber(data.y, 100, 115, 4);
+  str = String(data.x) + "          ";
+  M5.Lcd.drawString(str, 100,  65, 4);
+  str = String(data.y) + "          ";
+  M5.Lcd.drawString(str, 100, 115, 4);
   M5.Lcd.drawString(data.button ? "True  " : "False", 100, 165, 4);
 }
 
@@ -44,7 +47,7 @@ void setup() {
   joy.begin();
   M5.Lcd.clear();
   M5.Lcd.drawCentreString("JoyFace Test", 160, 12, 4);
-  M5.Lcd.drawCentreString("Calibrate",     60, 220, 2);
+  M5.Lcd.drawCentreString("Calibrate",     62, 220, 2);
   M5.Lcd.drawCentreString("Save",         160, 220, 2);
 }
 
@@ -56,11 +59,11 @@ void loop() {
   if(M5.BtnA.wasReleased()) {
     if(joy.is_calibrating()) {
       joy.read(reading);  // This will change JoyFace into non-calibrating mode
-      M5.Lcd.drawCentreString("Calibrate", 60, 220, 2);
+      M5.Lcd.drawCentreString("Calibrate", 62, 220, 2);
     }
     else {
       joy.calibrate();  // This will change JoyFace into calibrating mode.
-      M5.Lcd.drawCentreString("  Normal  ", 60, 220, 2);
+      M5.Lcd.drawCentreString("  Normal  ", 62, 220, 2);
     }
   }
   if(joy.is_calibrating()) {
@@ -69,7 +72,7 @@ void loop() {
       draw_calibration(joy.get_calibration_info());
       delay(500);   // to make sure the green numbers show up for both
       clear_calibration_display();
-      M5.Lcd.drawCentreString("Calibrate", 60, 220, 2);
+      M5.Lcd.drawCentreString("Calibrate", 62, 220, 2);
     }
     else {
       draw_calibration(joy.get_calibration_info());

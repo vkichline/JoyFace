@@ -46,6 +46,15 @@ bool JoyFace::read(JF_Reading& reading) {
         else                     { set_led(1, 0, 0,  0); set_led(3, 0, 0, 0); }
       }
     }
+    // scale the reading if the joystick is calibrated
+    if(calibrated) {
+      reading.x = (reading.x - cal_data.center_x) * cal_data.x_scale;
+      reading.y = (reading.y - cal_data.center_y) * cal_data.y_scale;
+      if( 100 < reading.x) reading.x =  100;
+      if(-100 > reading.x) reading.x = -100;
+      if( 100 < reading.y) reading.y =  100;
+      if(-100 > reading.y) reading.y = -100;
+    }
     return true;
   }
   return false;
@@ -95,7 +104,7 @@ bool JoyFace::calibrate() {
   // Test to see if we are just beginning calibration
   if(!calibrating) {
     Serial.println("Beginning calibration");
-    cal_data.clear();
+    cal_info.clear();
     calibrating = true;
     calibrated  = false;
   }
@@ -113,32 +122,35 @@ bool JoyFace::calibrate() {
 
     // When the joystick is at rest in the center, add to the center sums
     if(raw_x > 400 && raw_x < 600 && raw_y > 400 && raw_y < 600) {
-      cal_data.x_center += raw_x;
-      cal_data.y_center += raw_y;
+      cal_info.x_center += raw_x;
+      cal_info.y_center += raw_y;
       Serial.printf("Calibration center point #%d: raw_x = %d, raw_y = %d, x_center = %d, y_center = %d\n",
-                    cal_data.center_count, raw_x, raw_y, cal_data.x_center, cal_data.y_center);
-      cal_data.center_count++;
+                    cal_info.center_count, raw_x, raw_y, cal_info.x_center, cal_info.y_center);
+      cal_info.center_count++;
     }
     else {
       // Capture minimum and maximum values when user is making circles
-      if(raw_x > cal_data.max_x) cal_data.max_x = raw_x;
-      if(raw_x < cal_data.min_x) cal_data.min_x = raw_x;
-      if(raw_y > cal_data.max_y) cal_data.max_y = raw_y;
-      if(raw_y < cal_data.min_y) cal_data.min_y = raw_y;
+      if(raw_x > cal_info.max_x) cal_info.max_x = raw_x;
+      if(raw_x < cal_info.min_x) cal_info.min_x = raw_x;
+      if(raw_y > cal_info.max_y) cal_info.max_y = raw_y;
+      if(raw_y < cal_info.min_y) cal_info.min_y = raw_y;
       Serial.printf("Calibartion min/max: #%d: raw_x = %d, raw_y = %d, min_x = %d, max_x = %d, min_y = %d, max_y = %d\n",
-                    cal_data.xy_count, raw_x, raw_y, cal_data.min_x, cal_data.max_x, cal_data.min_y, cal_data.max_y);
-      cal_data.xy_count++;
+                    cal_info.xy_count, raw_x, raw_y, cal_info.min_x, cal_info.max_x, cal_info.min_y, cal_info.max_y);
+      cal_info.xy_count++;
     }
 
     // If we've collected all the data we need, calibration is complete
-    if(CALIBRATION_SAMPLES <= cal_data.center_count && CALIBRATION_SAMPLES < cal_data.xy_count) {
+    if(CALIBRATION_SAMPLES <= cal_info.center_count && CALIBRATION_SAMPLES < cal_info.xy_count) {
       // Handle the actual calibration here
-      uint16_t center_x = cal_data.x_center / cal_data.center_count;
-      uint16_t center_y = cal_data.y_center / cal_data.center_count;
-      Serial.printf("Center: %d/%d. Min: %d/%d. Max: %d/%d\n", center_x, center_y, cal_data.min_x, cal_data.min_y, cal_data.max_x, cal_data.max_y);
+      cal_data.center_x = cal_info.x_center / cal_info.center_count;
+      cal_data.center_y = cal_info.y_center / cal_info.center_count;
+      cal_data.x_scale = 200.0 / (double)(cal_info.max_x - cal_info.min_x);
+      cal_data.y_scale = 200.0 / (double)(cal_info.max_y - cal_info.min_y);
+      Serial.printf("Center: %d/%d. Min: %d/%d. Max: %d/%d. Scale: %.2f/%.2f\n",
+                    cal_data.center_x, cal_data.center_y, cal_info.min_x, cal_info.min_y,
+                    cal_info.max_x, cal_info.max_y, cal_data.x_scale, cal_data.y_scale);
       calibrating = false;
       calibrated  = true;
-      flash_leds();
     }
     return calibrated;
   }
