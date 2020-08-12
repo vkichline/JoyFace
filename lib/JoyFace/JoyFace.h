@@ -6,7 +6,8 @@
 // In the year of the plague
 //
 // Normally, X and Y return values between ~ 200 and 800, and center values may differ by 50, making the readings hard to use.
-// Calibration stores data in NVS memory used to convert this raw input to -100 to +100 for X and Y, with the center at 0/0.
+// Calibration stores data in NVS memory used to convert this raw input to -128 to +128 for X and Y, with the center at 0/0.
+// NOTE: You can change the scaling factor by changing JF_SCALE_TO
 // How to calibrate:
 // Calling calibrate the first time switches to calibration mode.
 // The calibration code will take CALIBRATION_SAMPLES of the center position (when joystick is near center)
@@ -20,6 +21,7 @@
 
 
 #define CALIBRATION_SAMPLES 50    // How many samples required for min/max and center calibation (must be less than 255)
+#define JF_SCALE_TO         128   // The minimum and maximum that x and y will be scaled to
 
 typedef struct JF_Reading {
   int16_t   x;

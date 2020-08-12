@@ -56,10 +56,10 @@ bool JoyFace::read(JF_Reading& reading) {
       reading.x = (reading.x - cal_data.center_x) * cal_data.x_scale;
       reading.y = (reading.y - cal_data.center_y) * cal_data.y_scale;
       // Enforce limitations
-      if( 100 < reading.x) reading.x =  100;
-      if(-100 > reading.x) reading.x = -100;
-      if( 100 < reading.y) reading.y =  100;
-      if(-100 > reading.y) reading.y = -100;
+      if( JF_SCALE_TO < reading.x) reading.x =  JF_SCALE_TO;
+      if(-JF_SCALE_TO > reading.x) reading.x = -JF_SCALE_TO;
+      if( JF_SCALE_TO < reading.y) reading.y =  JF_SCALE_TO;
+      if(-JF_SCALE_TO > reading.y) reading.y = -JF_SCALE_TO;
       // Make 0/0 easier to hit
       if(abs(reading.x) <= ZERO_THRESHOLD && abs(reading.y) <= ZERO_THRESHOLD) {
         reading.x = 0;
@@ -157,8 +157,8 @@ bool JoyFace::calibrate() {
       // Handle the actual calibration here
       cal_data.center_x = cal_info.x_center / cal_info.center_count;
       cal_data.center_y = cal_info.y_center / cal_info.center_count;
-      cal_data.x_scale = (200.0 / (double)(cal_info.max_x - cal_info.min_x)) + .01; // Overscale a little
-      cal_data.y_scale = (200.0 / (double)(cal_info.max_y - cal_info.min_y)) + .01;
+      cal_data.x_scale = (double(JF_SCALE_TO * 2) / double(cal_info.max_x - cal_info.min_x)) + .01; // Overscale a little
+      cal_data.y_scale = (double(JF_SCALE_TO * 2) / double(cal_info.max_y - cal_info.min_y)) + .01;
       Serial.printf("Center: %d/%d. Min: %d/%d. Max: %d/%d. Scale: %.2f/%.2f\n",
                     cal_data.center_x, cal_data.center_y, cal_info.min_x, cal_info.min_y,
                     cal_info.max_x, cal_info.max_y, cal_data.x_scale, cal_data.y_scale);
